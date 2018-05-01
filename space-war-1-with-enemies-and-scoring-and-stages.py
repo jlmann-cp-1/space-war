@@ -30,12 +30,12 @@ GREEN = (100, 255, 100)
 FONT_SM = pygame.font.Font(None, 24)
 FONT_MD = pygame.font.Font(None, 32)
 FONT_LG = pygame.font.Font(None, 64)
-FONT_XL = pygame.font.Font("assets/fonts/space_patrol.ttf", 96)
-    
+FONT_XL = pygame.font.Font("assets/fonts/spacerangerboldital.ttf", 96)
+
 # Images
 ship_img = pygame.image.load('assets/images/player.png')
 laser_img = pygame.image.load('assets/images/laserRed.png')
-enemy_img = pygame.image.load('assets/images/enemyShip.png')
+mob_img = pygame.image.load('assets/images/enemyShip.png')
 bomb_img = pygame.image.load('assets/images/laserGreen.png')
 
 # Sounds
@@ -52,10 +52,10 @@ class Ship(pygame.sprite.Sprite):
         super().__init__()
 
         self.image = image
-        self.rect = image.get_rect()
+        self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
-
+        
         self.speed = 3
         self.shield = 5
 
@@ -66,26 +66,22 @@ class Ship(pygame.sprite.Sprite):
         self.rect.x += self.speed
 
     def shoot(self):
-        las = Laser(laser_img)
-        
-        las.rect.centerx = self.rect.centerx
-        las.rect.centery = self.rect.top
-        
-        lasers.add(las)
+        laser = Laser(laser_img)
+        laser.rect.centerx = self.rect.centerx
+        laser.rect.centery = self.rect.top
+        lasers.add(laser)
 
     def update(self, bombs):
         hit_list = pygame.sprite.spritecollide(self, bombs, True)
 
         for hit in hit_list:
-            #OOF.play()
+            # play hit sound
             self.shield -= 1
 
-        hit_list = pygame.sprite.spritecollide(self, mobs, True)
-
+        hit_list = pygame.sprite.spritecollide(self, mobs, False)
         if len(hit_list) > 0:
-            #DOUBLEOOF.play()
             self.shield = 0
-            
+
         if self.shield == 0:
             EXPLOSION.play()
             self.kill()
@@ -96,24 +92,23 @@ class Laser(pygame.sprite.Sprite):
         super().__init__()
 
         self.image = image
-        self.rect = image.get_rect()
+        self.rect = self.image.get_rect()
         
-        self.speed = 6
+        self.speed = 5
 
     def update(self):
         self.rect.y -= self.speed
-    
+
         if self.rect.bottom < 0:
             self.kill()
-
-        
+    
 class Mob(pygame.sprite.Sprite):
     def __init__(self, x, y, image):
         super().__init__()
 
         self.image = image
-        self.mask = pygame.mask.from_surface(image)
-        self.rect = image.get_rect()
+        self.mask = pygame.mask.from_surface(self.image)
+        self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
 
@@ -122,14 +117,13 @@ class Mob(pygame.sprite.Sprite):
         bomb.rect.centerx = self.rect.centerx
         bomb.rect.centery = self.rect.bottom
         bombs.add(bomb)
-        
+    
     def update(self, lasers, player):
         hit_list = pygame.sprite.spritecollide(self, lasers, True, pygame.sprite.collide_mask)
 
         if len(hit_list) > 0:
             EXPLOSION.play()
             player.score += 1
-            print(player.score)
             self.kill()
 
 
@@ -139,7 +133,7 @@ class Bomb(pygame.sprite.Sprite):
         super().__init__()
 
         self.image = image
-        self.rect = image.get_rect()
+        self.rect = self.image.get_rect()
         
         self.speed = 3
 
@@ -151,29 +145,28 @@ class Fleet:
 
     def __init__(self, mobs):
         self.mobs = mobs
-        self.bomb_rate = 60
-        self.speed = 5
         self.moving_right = True
+        self.speed = 5
+        self.bomb_rate = 60
 
     def move(self):
         reverse = False
-
-        if self.moving_right:
-            for m in mobs:
+        
+        for m in mobs:
+            if self.moving_right:
                 m.rect.x += self.speed
                 if m.rect.right >= WIDTH:
                     reverse = True
-        else:
-            for m in mobs:
+            else:
                 m.rect.x -= self.speed
-                if m.rect.left <= 0:
+                if m.rect.left <=0:
                     reverse = True
 
-        if reverse:
+        if reverse == True:
             self.moving_right = not self.moving_right
-
             for m in mobs:
                 m.rect.y += 32
+            
 
     def choose_bomber(self):
         rand = random.randrange(0, self.bomb_rate)
@@ -194,9 +187,10 @@ class Fleet:
     
 # Make game objects
 ship = Ship(384, 536, ship_img)
-mob1 = Mob(128, 64, enemy_img)
-mob2 = Mob(256, 64, enemy_img)
-mob3 = Mob(384, 64, enemy_img)
+mob1 = Mob(128, 64, mob_img)
+mob2 = Mob(256, 64, mob_img)
+mob3 = Mob(384, 64, mob_img)
+
 
 # Make sprite groups
 player = pygame.sprite.GroupSingle()
@@ -210,20 +204,22 @@ mobs.add(mob1, mob2, mob3)
 
 bombs = pygame.sprite.Group()
 
-# Make fleet
+
 fleet = Fleet(mobs)
 
+# set stage
+stage = START
+
 # Game helper functions
-def show_start_screen():
-    score_text = FONT_XL.render("Space @ War!", 1, WHITE)
-    screen.blit(score_text, [128, 204])
+def show_title_screen():
+    title_text = FONT_XL.render("Space War!", 1, WHITE)
+    screen.blit(title_text, [128, 204])
 
 def show_stats(player):
     score_text = FONT_MD.render(str(player.score), 1, WHITE)
     screen.blit(score_text, [32, 32])
 
 # Game loop
-stage = START
 done = False
 
 while not done:
@@ -246,26 +242,28 @@ while not done:
             ship.move_left()
         elif pressed[pygame.K_RIGHT]:
             ship.move_right()
-        
+            
     
     # Game logic (Check for collisions, update points, etc.)
     if stage == PLAYING:
         player.update(bombs)
-        lasers.update()
-        bombs.update()
+        lasers.update()   
         mobs.update(lasers, player)
+        bombs.update()
         fleet.update()
-            
+
+     
     # Drawing code (Describe the picture. It isn't actually drawn yet.)
     screen.fill(BLACK)
     lasers.draw(screen)
-    bombs.draw(screen)
     player.draw(screen)
+    bombs.draw(screen)
     mobs.draw(screen)
     show_stats(player)
 
     if stage == START:
-        show_start_screen()
+        show_title_screen()
+
     
     # Update screen (Actually draw the picture in the window.)
     pygame.display.flip()
