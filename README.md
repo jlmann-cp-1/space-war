@@ -1,10 +1,10 @@
-## Welcome to GitHub Pages
+# Space War
 
-You can use the [editor on GitHub](https://github.com/jlmann-cp-1/space-war/edit/master/README.md) to maintain and preview the content for your website in Markdown files.
+## About
 
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
+This is a paragraph about my amazing game. Blah blah blah...
 
-### Markdown
+## Instructions
 
 Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
 
